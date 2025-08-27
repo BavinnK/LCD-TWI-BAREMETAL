@@ -1,5 +1,9 @@
 #include <util/delay.h>
 #include <Arduino.h>
+#include "MyUSART.h"
+#define clk_speed 16000000
+#define baud 9600
+#define my_ubrr (clk_speed/16/baud-1)
 //we initilize the I2C protocol
 void i2c_init(void){
   //we set the TWSR to zero the default bc the datasheet says so lol so basically we set the prescaler to zero
@@ -30,21 +34,47 @@ void i2c_write(uint8_t data){
 }
 void i2c_stop(){
   TWCR=(1<<TWINT)|(1<<TWEN)|(1<<TWSTO);
-   while(!(TWCR&(1<<TWINT)));
+   //while(!(TWCR&(1<<TWINT)));
 }
-void setup() {
-  i2c_init();
-  _delay_ms(100);
+ 
+void lcd_backlight(bool stat){
+   uint8_t data_byte;
+  if (stat)
+  {
+    data_byte=0b00001000;
+    USART_strTransmit("ON");
+  }
+  else{
+        data_byte=0b00000000;
+        USART_strTransmit("OFF");
+
+  }
   i2c_start();
   //this is the slave address
   uint8_t slave_add=0b01001110;
   i2c_write(slave_add);
-  i2c_write(0b00001000);
+  
+  i2c_write(data_byte);
   i2c_stop();
+  
+}
+void setup() {
+  USART_init(my_ubrr);
+
+  
+  i2c_init();
+  _delay_ms(100);
+  lcd_backlight(0);
 
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
+  if (UCSR0A & (1 << RXC0)) { 
+    unsigned char data = UDR0;
+    USART_TX(data);
+    }
+  _delay_ms(1000);
+    lcd_backlight(1);
+  _delay_ms(1000);
+    lcd_backlight(0);
 }
