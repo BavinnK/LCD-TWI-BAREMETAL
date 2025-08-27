@@ -11,8 +11,14 @@ void I2C_init(void){
 }
 //in here we gonna send the start command to a specific I2C device
 void i2c_start(void){
-  //in this line of code we want todo 3 things first we set the TWINT bit to 1 to make
-  TWCR=(1<<TWSTA)|(1<<TWINT)|(1<<TWEA);
+  //in this line of code we want todo 3 things first we set the TWINT bit to 1  so we can make it to zero why is that ??? bc when we set that bit to 1
+  //basiccally it clears the bit to zero by this the hardware says alr i will start the communication to that specific device
+  //TWEA bit controls the generation of the acknowledge pulse
+  //TWEN: TWI Enable Bit  //for more info look at the data sheet
+  TWCR=(1<<TWSTA)|(1<<TWINT)|(1<<TWEN);
+  //and here for this loop in the comments we said when its 0 "TWINT" bit it means the hardware is not finished and its sending a start to the device how do we know
+  //it send it ?? by a loop
+  while(!(TWCR&(1<<TWINT)));
 }
 void setup() {
   I2C_init();
