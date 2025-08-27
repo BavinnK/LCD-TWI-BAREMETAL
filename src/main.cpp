@@ -1,3 +1,4 @@
+#include <util/delay.h>
 #include <Arduino.h>
 //we initilize the I2C protocol
 void i2c_init(void){
@@ -33,6 +34,13 @@ void i2c_stop(){
 }
 void setup() {
   i2c_init();
+  _delay_ms(100);
+  i2c_start();
+  //this is the slave address
+  uint8_t slave_add=0b01001110;
+  i2c_write(slave_add);
+  i2c_write(0b00001000);
+  i2c_stop();
 
 }
 
