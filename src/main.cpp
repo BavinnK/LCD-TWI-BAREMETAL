@@ -1,6 +1,6 @@
 #include <Arduino.h>
 //we initilize the I2C protocol
-void I2C_init(void){
+void i2c_init(void){
   //we set the TWSR to zero the default bc the datasheet says so lol so basically we set the prescaler to zero
   TWSR=0x00;
   //after that we gonna set up the  TWBR register to 72 why? bc of this formula
@@ -20,8 +20,19 @@ void i2c_start(void){
   //it send it ?? by a loop
   while(!(TWCR&(1<<TWINT)));
 }
+//this function sends the data via I2C protocol
+void i2c_write(uint8_t data){
+  TWDR=data;
+  TWCR=(1<<TWINT)|(1<<TWEN);
+  while(!(TWCR&(1<<TWINT)));
+  
+}
+void i2c_stop(){
+  TWCR=(1<<TWINT)|(1<<TWEN)|(1<<TWSTO);
+   while(!(TWCR&(1<<TWINT)));
+}
 void setup() {
-  I2C_init();
+  i2c_init();
 
 }
 
