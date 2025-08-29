@@ -4,6 +4,10 @@
 #define clk_speed 16000000
 #define baud 9600
 #define my_ubrr (clk_speed/16/baud-1)
+#define slave_add    0b01001110
+#define backLight    0b00001000 //third bit for display on/off
+#define command_flag 0b00000000 //if RS is zero it means command 
+#define data_flag    0b00000001 //else if its 1 it means we want to display data
 //we initilize the I2C protocol
 void i2c_init(void){
   //we set the TWSR to zero the default bc the datasheet says so lol so basically we set the prescaler to zero
@@ -36,35 +40,30 @@ void i2c_stop(){
   TWCR=(1<<TWINT)|(1<<TWEN)|(1<<TWSTO);
    //while(!(TWCR&(1<<TWINT)));
 }
- 
-void lcd_backlight(bool stat){
-   uint8_t data_byte;
-  if (stat)
-  {
-    data_byte=0b00001000;
-    USART_strTransmit("ON");
-  }
-  else{
-        data_byte=0b00000000;
-        USART_strTransmit("OFF");
-
-  }
-  i2c_start();
-  //this is the slave address
-  uint8_t slave_add=0b01001110;
-  i2c_write(slave_add);
-  
-  i2c_write(data_byte);
-  i2c_stop();
-  
+////////////////////////////////////////////////////////////////////////////////////////////Layer 2
+void lcd_sendNibble(uint8_t nibble,uint8_t flag){
+  uint16_t lcd_byte=(nibble|flag|backLight);
+  i2c_write(lcd_byte|1<<2);
+  _delay_ms(5);
+  i2c_write(lcd_byte);
 }
+void lcd_send_data(uint8_t data,uint8_t flag){
+  i2c_start();
+  i2c_write(slave_add);
+  lcd_sendNibble((data&0xF0),  flag);//sending 4 high bit or 4 most significant bit
+  lcd_send_data((data<<4)&0xF0,  flag);//sending low 4 bit or 4 least significant bit
+  i2c_stop();
+}
+////////////////////////////////////////////////////////////////////////////LAYER 3
+
+
+
 void setup() {
   USART_init(my_ubrr);
 
   
   i2c_init();
-  _delay_ms(100);
-  lcd_backlight(0);
+  
 
 }
 
@@ -73,8 +72,5 @@ void loop() {
     unsigned char data = UDR0;
     USART_TX(data);
     }
-  _delay_ms(1000);
-    lcd_backlight(1);
-  _delay_ms(1000);
-    lcd_backlight(0);
+  
 }
